@@ -40,7 +40,7 @@ test_hex <- read.table(unz(path_test, "sorted_test.csv"), header=T, quote="\"", 
 ## train_hex_split <- h2o.splitFrame(train_hex, ratios = 0.8, shuffle = TRUE)
 
 ## Set up training control parameters
-tc <- trainControl(method = "cv", number=5, classProbs=FALSE,
+tc <- trainControl(method = "cv", number=1, classProbs=FALSE,
                    savePred=T)
 
 ## One Variable at at Time
