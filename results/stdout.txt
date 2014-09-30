@@ -29,11 +29,11 @@ Type 'q()' to quit R.
 > h2o_ver <- "1511"
 > 
 > ## Install H2O
-> # local({r <- getOption("repos"); r["CRAN"] <- "http://cran.us.r-project.org"; options(repos = r)})
-> # txt_repo <- (c(paste0(paste0("http://s3.amazonaws.com/h2o-release/h2o/master/",
-> #                              h2o_ver),"/R"),
-> #                getOption("repos")))
-> # install.packages("h2o", repos = txt_repo, quiet = TRUE)
+> local({r <- getOption("repos"); r["CRAN"] <- "http://cran.us.r-project.org"; options(repos = r)})
+> txt_repo <- (c(paste0(paste0("http://s3.amazonaws.com/h2o-release/h2o/master/",
++                              h2o_ver),"/R"),
++                getOption("repos")))
+> install.packages("h2o", repos = txt_repo, quiet = TRUE)
 > 
 > 
 > ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -41,5 +41,209 @@ Type 'q()' to quit R.
 > ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 > 
 > library(h2o)
-Error in library(h2o) : there is no package called 'h2o'
-[domino] saving output of dump.frames to 'domino.last.dump.Rda'. You can load it with R's 'debugger' function to debug your script.[domino] saving your workspace to 'domino.workspace.RData' in case you want to access your intermediate results
+Loading required package: RCurl
+Loading required package: bitops
+Loading required package: rjson
+Loading required package: statmod
+Loading required package: tools
+
+----------------------------------------------------------------------
+
+Your next step is to start H2O and get a connection object (named
+'localH2O', for example):
+    > localH2O = h2o.init()
+
+For H2O package documentation, first call init() and then ask for help:
+    > localH2O = h2o.init()
+    > ??h2o
+
+To stop H2O you must explicitly call shutdown (either from R, as shown
+here, or from the Web UI):
+    > h2o.shutdown(localH2O)
+
+After starting H2O, you can use the Web UI at http://localhost:54321
+For more information visit http://docs.0xdata.com
+
+----------------------------------------------------------------------
+
+
+Attaching package: 'h2o'
+
+The following objects are masked from 'package:base':
+
+    ifelse, max, min, sum
+
+> localH2O <- h2o.init(max_mem_size = '8g') ## using a max 1GB of RAM
+
+H2O is not running yet, starting it now...
+
+Note:  In case of errors look at the following log files:
+    /tmp/RtmpY1KdsS/h2o__started_from_r.out
+    /tmp/RtmpY1KdsS/h2o__started_from_r.err
+
+java version "1.7.0_65"
+OpenJDK Runtime Environment (IcedTea 2.5.2) (7u65-2.5.2-3~14.04)
+OpenJDK 64-Bit Server VM (build 24.65-b04, mixed mode)
+
+Successfully connected to http://127.0.0.1:54321 
+R is connected to H2O cluster:
+    H2O cluster uptime:         2 seconds 137 milliseconds 
+    H2O cluster version:        2.7.0.1511 
+    H2O cluster name:           H2O_started_from_R 
+    H2O cluster total nodes:    1 
+    H2O cluster total memory:   7.11 GB 
+    H2O cluster total cores:    4 
+    H2O cluster allowed cores:  15 
+    H2O cluster healthy:        TRUE 
+
+> 
+> 
+> ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+> ## Import Data
+> ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+> 
+> ## Get the local path on Domino
+> path_cloud <- getwd()
+> 
+> ## Define other paths
+> path_train <- paste0(path_cloud, "/data/train.zip")
+> path_test <- paste0(path_cloud, "/data/test.zip")
+> path_submission <- paste0(path_cloud, "/data/sample_submission.csv")
+> path_output <- paste0(path_cloud, "/results/my_Kaggle_submission.csv")
+> 
+> ## Import Data to H2O Cluster
+> train_hex <- h2o.importFile(localH2O, path = path_train)
+  |                                                                              |                                                                      |   0%  |                                                                              |============================================                          |  63%  |                                                                              |======================================================================| 100%
+> test_hex <- h2o.importFile(localH2O, path = path_test)
+  |                                                                              |                                                                      |   0%  |                                                                              |======================================================================| 100%
+> raw_sub <- read.csv(path_submission)
+> 
+> 
+> ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+> ## Train a Deep Neural Networks model for each variable
+> ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+> 
+> ## Split the dataset into 80:20 for training and validation
+> train_hex_split <- h2o.splitFrame(train_hex, ratios = 0.8, shuffle = TRUE)
+> 
+> ## One Variable at at Time
+> ls_label <- c("Ca", "P", "pH", "SOC", "Sand")
+> 
+> for (n_label in 1:5) {
++         
++         ## Display
++         cat("\n\nNow training a DNN model for", ls_label[n_label], "...\n")
++         
++         ## Train a DNN
++         model <- h2o.deeplearning(x = 2:3595,
++                                   y = (3595 + n_label),
++                                   data = train_hex_split[[1]],
++                                   validation = train_hex_split[[2]],
++                                   activation = "Rectifier",
++                                   hidden = c(50, 50, 50),
++                                   epochs = 100,
++                                   classification = FALSE,
++                                   balance_classes = FALSE)
++         
++         ## Print the Model Summary
++         print(model)
++         
++         ## Use the model for prediction and store the results in submission template
++         raw_sub[, (n_label + 1)] <- as.matrix(h2o.predict(model, test_hex))
++         
++ }
+
+
+Now training a DNN model for Ca ...
+  |                                                                              |                                                                      |   0%  |                                                                              |=======                                                               |  10%  |                                                                              |==============                                                        |  20%  |                                                                              |=====================                                                 |  30%  |                                                                              |============================                                          |  40%  |                                                                              |===================================                                   |  50%  |                                                                              |==========================================                            |  60%  |                                                                              |=================================================                     |  70%  |                                                                              |========================================================              |  80%  |                                                                              |===============================================================       |  90%  |                                                                              |======================================================================| 100%
+IP Address: 127.0.0.1 
+Port      : 54321 
+Parsed Data Key: train_shuffled_part0.hex 
+
+Deep Learning Model Key: DeepLearning_b0d2009f648c580f1815d8aa0a3845a7
+Training mean square error: 0.076478
+Validation mean square error: 0.05063516
+
+Now training a DNN model for P ...
+  |                                                                              |                                                                      |   0%  |                                                                              |=======                                                               |  10%  |                                                                              |==============                                                        |  20%  |                                                                              |=====================                                                 |  30%  |                                                                              |============================                                          |  40%  |                                                                              |===================================                                   |  50%  |                                                                              |==========================================                            |  60%  |                                                                              |=================================================                     |  70%  |                                                                              |========================================================              |  80%  |                                                                              |===============================================================       |  90%  |                                                                              |======================================================================| 100%
+IP Address: 127.0.0.1 
+Port      : 54321 
+Parsed Data Key: train_shuffled_part0.hex 
+
+Deep Learning Model Key: DeepLearning_95d328c52e6eac3a391e44fe238f4680
+Training mean square error: 0.4624293
+Validation mean square error: 0.4412819
+
+Now training a DNN model for pH ...
+  |                                                                              |                                                                      |   0%  |                                                                              |=======                                                               |  10%  |                                                                              |==============                                                        |  20%  |                                                                              |=====================                                                 |  30%  |                                                                              |============================                                          |  40%  |                                                                              |===================================                                   |  50%  |                                                                              |==========================================                            |  60%  |                                                                              |=================================================                     |  70%  |                                                                              |========================================================              |  80%  |                                                                              |===============================================================       |  90%  |                                                                              |======================================================================| 100%
+IP Address: 127.0.0.1 
+Port      : 54321 
+Parsed Data Key: train_shuffled_part0.hex 
+
+Deep Learning Model Key: DeepLearning_b202a7f386d65e763e0de2a387944150
+Training mean square error: 0.1314014
+Validation mean square error: 0.253859
+
+Now training a DNN model for SOC ...
+  |                                                                              |                                                                      |   0%  |                                                                              |=======                                                               |  10%  |                                                                              |==============                                                        |  20%  |                                                                              |=====================                                                 |  30%  |                                                                              |============================                                          |  40%  |                                                                              |===================================                                   |  50%  |                                                                              |==========================================                            |  60%  |                                                                              |=================================================                     |  70%  |                                                                              |========================================================              |  80%  |                                                                              |===============================================================       |  90%  |                                                                              |======================================================================| 100%
+IP Address: 127.0.0.1 
+Port      : 54321 
+Parsed Data Key: train_shuffled_part0.hex 
+
+Deep Learning Model Key: DeepLearning_82ee05b4522c367e4c5beecb04f54076
+Training mean square error: 0.06056724
+Validation mean square error: 0.1880688
+
+Now training a DNN model for Sand ...
+  |                                                                              |                                                                      |   0%  |                                                                              |=======                                                               |  10%  |                                                                              |==============                                                        |  20%  |                                                                              |=====================                                                 |  30%  |                                                                              |============================                                          |  40%  |                                                                              |===================================                                   |  50%  |                                                                              |==========================================                            |  60%  |                                                                              |=================================================                     |  70%  |                                                                              |========================================================              |  80%  |                                                                              |===============================================================       |  90%  |                                                                              |======================================================================| 100%
+IP Address: 127.0.0.1 
+Port      : 54321 
+Parsed Data Key: train_shuffled_part0.hex 
+
+Deep Learning Model Key: DeepLearning_94a642551288efb57d8dc7dcd0b94df0
+Training mean square error: 0.1265484
+Validation mean square error: 0.1457083> 
+> 
+> ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+> ## Save the results as a CSV
+> ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+> 
+> write.csv(raw_sub, file = path_output, row.names = FALSE)
+> 
+> 
+> ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+> ## Print System and Session Info
+> ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+> 
+> print(sessionInfo())
+R version 3.1.1 (2014-07-10)
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+locale:
+[1] C
+
+attached base packages:
+[1] tools     stats     graphics  grDevices utils     datasets  methods  
+[8] base     
+
+other attached packages:
+[1] h2o_2.7.0.1511 statmod_1.4.20 rjson_0.2.14   RCurl_1.95-4.3 bitops_1.0-6  
+> 
+> print(Sys.info())
+                                     sysname 
+                                     "Linux" 
+                                     release 
+                         "3.13.0-36-generic" 
+                                     version 
+"#63-Ubuntu SMP Wed Sep 3 21:30:07 UTC 2014" 
+                                    nodename 
+                              "572609aa03c9" 
+                                     machine 
+                                    "x86_64" 
+                                       login 
+                                   "unknown" 
+                                        user 
+                                    "ubuntu" 
+                              effective_user 
+                                    "ubuntu" 
+> 
