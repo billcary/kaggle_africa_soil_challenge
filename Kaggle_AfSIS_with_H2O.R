@@ -12,11 +12,11 @@
 h2o_ver <- "1511"
 
 ## Install H2O
-# local({r <- getOption("repos"); r["CRAN"] <- "http://cran.us.r-project.org"; options(repos = r)})
-# txt_repo <- (c(paste0(paste0("http://s3.amazonaws.com/h2o-release/h2o/master/",
-#                              h2o_ver),"/R"),
-#                getOption("repos")))
-# install.packages("h2o", repos = txt_repo, quiet = TRUE)
+local({r <- getOption("repos"); r["CRAN"] <- "http://cran.us.r-project.org"; options(repos = r)})
+txt_repo <- (c(paste0(paste0("http://s3.amazonaws.com/h2o-release/h2o/master/",
+                             h2o_ver),"/R"),
+               getOption("repos")))
+install.packages("h2o", repos = txt_repo, quiet = TRUE)
 
 
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
