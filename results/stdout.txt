@@ -20,13 +20,15 @@ Type 'q()' to quit R.
 > ## =============================================================================
 > 
 > ## Data Source: https://www.kaggle.com/c/afsis-soil-properties
+> ## Adapted from work by Jo-Fai Chow at the following post:
+> ## http://0xdata.com/blog/2014/09/r-h2o-domino/
 > 
 > ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 > ## Install Domino Bleeding Edge Version on Domino
 > ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 > 
 > ## Specify H2O version here
-> h2o_ver <- "1511"
+> h2o_ver <- "1523"
 > 
 > ## Install H2O
 > local({r <- getOption("repos"); r["CRAN"] <- "http://cran.us.r-project.org"; options(repos = r)})
@@ -73,13 +75,13 @@ The following objects are masked from 'package:base':
 
     ifelse, max, min, sum
 
-> localH2O <- h2o.init(max_mem_size = '8g') ## using a max 1GB of RAM
+> localH2O <- h2o.init(max_mem_size = '10g') ## using a max 1GB of RAM
 
 H2O is not running yet, starting it now...
 
 Note:  In case of errors look at the following log files:
-    /tmp/RtmpY1KdsS/h2o__started_from_r.out
-    /tmp/RtmpY1KdsS/h2o__started_from_r.err
+    /tmp/RtmpKMEGQb/h2o__started_from_r.out
+    /tmp/RtmpKMEGQb/h2o__started_from_r.err
 
 java version "1.7.0_65"
 OpenJDK Runtime Environment (IcedTea 2.5.2) (7u65-2.5.2-3~14.04)
@@ -87,11 +89,11 @@ OpenJDK 64-Bit Server VM (build 24.65-b04, mixed mode)
 
 Successfully connected to http://127.0.0.1:54321 
 R is connected to H2O cluster:
-    H2O cluster uptime:         2 seconds 137 milliseconds 
-    H2O cluster version:        2.7.0.1511 
+    H2O cluster uptime:         2 seconds 133 milliseconds 
+    H2O cluster version:        2.7.0.1523 
     H2O cluster name:           H2O_started_from_R 
     H2O cluster total nodes:    1 
-    H2O cluster total memory:   7.11 GB 
+    H2O cluster total memory:   8.89 GB 
     H2O cluster total cores:    4 
     H2O cluster allowed cores:  15 
     H2O cluster healthy:        TRUE 
@@ -124,7 +126,7 @@ R is connected to H2O cluster:
 > ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 > 
 > ## Split the dataset into 80:20 for training and validation
-> train_hex_split <- h2o.splitFrame(train_hex, ratios = 0.8, shuffle = TRUE)
+> ## train_hex_split <- h2o.splitFrame(train_hex, ratios = 0.8, shuffle = TRUE)
 > 
 > ## One Variable at at Time
 > ls_label <- c("Ca", "P", "pH", "SOC", "Sand")
@@ -137,8 +139,8 @@ R is connected to H2O cluster:
 +         ## Train a DNN
 +         model <- h2o.deeplearning(x = 2:3595,
 +                                   y = (3595 + n_label),
-+                                   data = train_hex_split[[1]],
-+                                   validation = train_hex_split[[2]],
++                                   data = train_hex,
++                                   nfolds = 5,
 +                                   activation = "Rectifier",
 +                                   hidden = c(50, 50, 50),
 +                                   epochs = 100,
@@ -155,54 +157,89 @@ R is connected to H2O cluster:
 
 
 Now training a DNN model for Ca ...
-  |                                                                              |                                                                      |   0%  |                                                                              |=======                                                               |  10%  |                                                                              |==============                                                        |  20%  |                                                                              |=====================                                                 |  30%  |                                                                              |============================                                          |  40%  |                                                                              |===================================                                   |  50%  |                                                                              |==========================================                            |  60%  |                                                                              |=================================================                     |  70%  |                                                                              |========================================================              |  80%  |                                                                              |===============================================================       |  90%  |                                                                              |======================================================================| 100%
+  |                                                                              |                                                                      |   0%  |                                                                              |=                                                                     |   2%  |                                                                              |==                                                                    |   3%  |                                                                              |====                                                                  |   5%  |                                                                              |=====                                                                 |   7%  |                                                                              |======                                                                |   8%  |                                                                              |=======                                                               |  10%  |                                                                              |========                                                              |  12%  |                                                                              |=========                                                             |  13%  |                                                                              |==========                                                            |  15%  |                                                                              |============                                                          |  17%  |                                                                              |=======================                                               |  33%  |                                                                              |===================================                                   |  50%  |                                                                              |===============================================                       |  67%  |                                                                              |==========================================================            |  83%  |                                                                              |======================================================================| 100%
 IP Address: 127.0.0.1 
 Port      : 54321 
-Parsed Data Key: train_shuffled_part0.hex 
+Parsed Data Key: train.hex 
 
-Deep Learning Model Key: DeepLearning_b0d2009f648c580f1815d8aa0a3845a7
-Training mean square error: 0.076478
-Validation mean square error: 0.05063516
+Deep Learning Model Key: DeepLearning_8d7182b7b5bda65b6224bf5100cd4162
+Training mean square error: 0.07055288
+Validation mean square error: 0.2447396
+Cross-Validation Models:
+  DeepLearning_8d7182b7b5bda65b6224bf5100cd4162_xval0 
+  DeepLearning_8d7182b7b5bda65b6224bf5100cd4162_xval1 
+  DeepLearning_8d7182b7b5bda65b6224bf5100cd4162_xval2 
+  DeepLearning_8d7182b7b5bda65b6224bf5100cd4162_xval3 
+  DeepLearning_8d7182b7b5bda65b6224bf5100cd4162_xval4 
+
 
 Now training a DNN model for P ...
-  |                                                                              |                                                                      |   0%  |                                                                              |=======                                                               |  10%  |                                                                              |==============                                                        |  20%  |                                                                              |=====================                                                 |  30%  |                                                                              |============================                                          |  40%  |                                                                              |===================================                                   |  50%  |                                                                              |==========================================                            |  60%  |                                                                              |=================================================                     |  70%  |                                                                              |========================================================              |  80%  |                                                                              |===============================================================       |  90%  |                                                                              |======================================================================| 100%
+  |                                                                              |                                                                      |   0%  |                                                                              |=                                                                     |   2%  |                                                                              |==                                                                    |   3%  |                                                                              |====                                                                  |   5%  |                                                                              |=====                                                                 |   7%  |                                                                              |======                                                                |   8%  |                                                                              |=======                                                               |  10%  |                                                                              |========                                                              |  12%  |                                                                              |=========                                                             |  13%  |                                                                              |==========                                                            |  15%  |                                                                              |============                                                          |  17%  |                                                                              |=======================                                               |  33%  |                                                                              |===================================                                   |  50%  |                                                                              |===============================================                       |  67%  |                                                                              |==========================================================            |  83%  |                                                                              |======================================================================| 100%
 IP Address: 127.0.0.1 
 Port      : 54321 
-Parsed Data Key: train_shuffled_part0.hex 
+Parsed Data Key: train.hex 
 
-Deep Learning Model Key: DeepLearning_95d328c52e6eac3a391e44fe238f4680
-Training mean square error: 0.4624293
-Validation mean square error: 0.4412819
+Deep Learning Model Key: DeepLearning_adf7e5bcf522ea012c1470efedfd488b
+Training mean square error: 0.5051661
+Validation mean square error: 1.239169
+Cross-Validation Models:
+  DeepLearning_adf7e5bcf522ea012c1470efedfd488b_xval0 
+  DeepLearning_adf7e5bcf522ea012c1470efedfd488b_xval1 
+  DeepLearning_adf7e5bcf522ea012c1470efedfd488b_xval2 
+  DeepLearning_adf7e5bcf522ea012c1470efedfd488b_xval3 
+  DeepLearning_adf7e5bcf522ea012c1470efedfd488b_xval4 
+
 
 Now training a DNN model for pH ...
-  |                                                                              |                                                                      |   0%  |                                                                              |=======                                                               |  10%  |                                                                              |==============                                                        |  20%  |                                                                              |=====================                                                 |  30%  |                                                                              |============================                                          |  40%  |                                                                              |===================================                                   |  50%  |                                                                              |==========================================                            |  60%  |                                                                              |=================================================                     |  70%  |                                                                              |========================================================              |  80%  |                                                                              |===============================================================       |  90%  |                                                                              |======================================================================| 100%
+  |                                                                              |                                                                      |   0%  |                                                                              |=                                                                     |   2%  |                                                                              |==                                                                    |   3%  |                                                                              |====                                                                  |   5%  |                                                                              |=====                                                                 |   7%  |                                                                              |======                                                                |   8%  |                                                                              |=======                                                               |  10%  |                                                                              |========                                                              |  12%  |                                                                              |=========                                                             |  13%  |                                                                              |==========                                                            |  15%  |                                                                              |============                                                          |  17%  |                                                                              |=======================                                               |  33%  |                                                                              |===================================                                   |  50%  |                                                                              |===============================================                       |  67%  |                                                                              |==========================================================            |  83%  |                                                                              |======================================================================| 100%
 IP Address: 127.0.0.1 
 Port      : 54321 
-Parsed Data Key: train_shuffled_part0.hex 
+Parsed Data Key: train.hex 
 
-Deep Learning Model Key: DeepLearning_b202a7f386d65e763e0de2a387944150
-Training mean square error: 0.1314014
-Validation mean square error: 0.253859
+Deep Learning Model Key: DeepLearning_a9e5ee46de7d6788c2c55edde4214a0f
+Training mean square error: 0.1741292
+Validation mean square error: 0.3478505
+Cross-Validation Models:
+  DeepLearning_a9e5ee46de7d6788c2c55edde4214a0f_xval0 
+  DeepLearning_a9e5ee46de7d6788c2c55edde4214a0f_xval1 
+  DeepLearning_a9e5ee46de7d6788c2c55edde4214a0f_xval2 
+  DeepLearning_a9e5ee46de7d6788c2c55edde4214a0f_xval3 
+  DeepLearning_a9e5ee46de7d6788c2c55edde4214a0f_xval4 
+
 
 Now training a DNN model for SOC ...
-  |                                                                              |                                                                      |   0%  |                                                                              |=======                                                               |  10%  |                                                                              |==============                                                        |  20%  |                                                                              |=====================                                                 |  30%  |                                                                              |============================                                          |  40%  |                                                                              |===================================                                   |  50%  |                                                                              |==========================================                            |  60%  |                                                                              |=================================================                     |  70%  |                                                                              |========================================================              |  80%  |                                                                              |===============================================================       |  90%  |                                                                              |======================================================================| 100%
+  |                                                                              |                                                                      |   0%  |                                                                              |=                                                                     |   2%  |                                                                              |==                                                                    |   3%  |                                                                              |====                                                                  |   5%  |                                                                              |=====                                                                 |   7%  |                                                                              |======                                                                |   8%  |                                                                              |=======                                                               |  10%  |                                                                              |========                                                              |  12%  |                                                                              |=========                                                             |  13%  |                                                                              |==========                                                            |  15%  |                                                                              |============                                                          |  17%  |                                                                              |=======================                                               |  33%  |                                                                              |===================================                                   |  50%  |                                                                              |===============================================                       |  67%  |                                                                              |==========================================================            |  83%  |                                                                              |======================================================================| 100%
 IP Address: 127.0.0.1 
 Port      : 54321 
-Parsed Data Key: train_shuffled_part0.hex 
+Parsed Data Key: train.hex 
 
-Deep Learning Model Key: DeepLearning_82ee05b4522c367e4c5beecb04f54076
-Training mean square error: 0.06056724
-Validation mean square error: 0.1880688
+Deep Learning Model Key: DeepLearning_a0bfd80c95a01c5cf73633dc375f43d0
+Training mean square error: 0.07096524
+Validation mean square error: 0.317579
+Cross-Validation Models:
+  DeepLearning_a0bfd80c95a01c5cf73633dc375f43d0_xval0 
+  DeepLearning_a0bfd80c95a01c5cf73633dc375f43d0_xval1 
+  DeepLearning_a0bfd80c95a01c5cf73633dc375f43d0_xval2 
+  DeepLearning_a0bfd80c95a01c5cf73633dc375f43d0_xval3 
+  DeepLearning_a0bfd80c95a01c5cf73633dc375f43d0_xval4 
+
 
 Now training a DNN model for Sand ...
-  |                                                                              |                                                                      |   0%  |                                                                              |=======                                                               |  10%  |                                                                              |==============                                                        |  20%  |                                                                              |=====================                                                 |  30%  |                                                                              |============================                                          |  40%  |                                                                              |===================================                                   |  50%  |                                                                              |==========================================                            |  60%  |                                                                              |=================================================                     |  70%  |                                                                              |========================================================              |  80%  |                                                                              |===============================================================       |  90%  |                                                                              |======================================================================| 100%
+  |                                                                              |                                                                      |   0%  |                                                                              |=                                                                     |   2%  |                                                                              |==                                                                    |   3%  |                                                                              |====                                                                  |   5%  |                                                                              |=====                                                                 |   7%  |                                                                              |======                                                                |   8%  |                                                                              |=======                                                               |  10%  |                                                                              |========                                                              |  12%  |                                                                              |=========                                                             |  13%  |                                                                              |==========                                                            |  15%  |                                                                              |============                                                          |  17%  |                                                                              |=======================                                               |  33%  |                                                                              |===================================                                   |  50%  |                                                                              |===============================================                       |  67%  |                                                                              |==========================================================            |  83%  |                                                                              |======================================================================| 100%
 IP Address: 127.0.0.1 
 Port      : 54321 
-Parsed Data Key: train_shuffled_part0.hex 
+Parsed Data Key: train.hex 
 
-Deep Learning Model Key: DeepLearning_94a642551288efb57d8dc7dcd0b94df0
-Training mean square error: 0.1265484
-Validation mean square error: 0.1457083> 
+Deep Learning Model Key: DeepLearning_aae3611c7d5a88272b254ef753f046a6
+Training mean square error: 0.1365589
+Validation mean square error: 0.4655006
+Cross-Validation Models:
+  DeepLearning_aae3611c7d5a88272b254ef753f046a6_xval0 
+  DeepLearning_aae3611c7d5a88272b254ef753f046a6_xval1 
+  DeepLearning_aae3611c7d5a88272b254ef753f046a6_xval2 
+  DeepLearning_aae3611c7d5a88272b254ef753f046a6_xval3 
+  DeepLearning_aae3611c7d5a88272b254ef753f046a6_xval4 
+> 
 > 
 > ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 > ## Save the results as a CSV
@@ -227,7 +264,7 @@ attached base packages:
 [8] base     
 
 other attached packages:
-[1] h2o_2.7.0.1511 statmod_1.4.20 rjson_0.2.14   RCurl_1.95-4.3 bitops_1.0-6  
+[1] h2o_2.7.0.1523 statmod_1.4.20 rjson_0.2.14   RCurl_1.95-4.3 bitops_1.0-6  
 > 
 > print(Sys.info())
                                      sysname 
@@ -237,7 +274,7 @@ other attached packages:
                                      version 
 "#63-Ubuntu SMP Wed Sep 3 21:30:07 UTC 2014" 
                                     nodename 
-                              "572609aa03c9" 
+                              "a56aebbec86d" 
                                      machine 
                                     "x86_64" 
                                        login 
